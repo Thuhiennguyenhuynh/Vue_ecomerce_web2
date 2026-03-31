@@ -2,10 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'node:path'
 import autoprefixer from 'autoprefixer'
+import mkcert from 'vite-plugin-mkcert'
 
 export default defineConfig(() => {
   return {
-    plugins: [vue()],
+    plugins: [vue(), mkcert()],
     base: './',
     css: {
       postcss: {
@@ -34,6 +35,7 @@ export default defineConfig(() => {
     },
     server: {
       port: 3000,
+      https: true,
       proxy: {
         // https://vitejs.dev/config/server-options.html
       },
