@@ -2,8 +2,14 @@ import { h, resolveComponent } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import DefaultLayout from '@/layouts/DefaultLayout'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/pages/Login.vue'),
+  },
   {
     path: '/',
     name: 'Home',
@@ -13,9 +19,6 @@ const routes = [
       {
         path: '/dashboard',
         name: 'Dashboard',
-        // route level code-splitting
-        // this generates a separate chunk (about.[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
         component: () =>
           import(
             /* webpackChunkName: "dashboard" */ '@/views/dashboard/Dashboard.vue'
@@ -25,11 +28,25 @@ const routes = [
         path: 'admin/products',
         name: 'AdminProducts',
         component: () => import('@/views/admin/Products.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path:'admin/categories',
         name:'AdminCategories',
         component: () => import('@/views/admin/Categories.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'admin/users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/Users.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'admin/orders',
+        name: 'AdminOrders',
+        component: () => import('@/views/admin/Orders.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: '/theme',
@@ -324,6 +341,17 @@ const router = createRouter({
     // always scroll to top
     return { top: 0 }
   },
+})
+
+// Route guard for authentication
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

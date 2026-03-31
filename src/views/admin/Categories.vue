@@ -53,11 +53,27 @@
         <CForm>
           <div class="mb-3">
             <CFormLabel>Tên Danh Mục <span class="text-danger">*</span></CFormLabel>
-            <CFormInput v-model="form.categoryName" placeholder="VD: Laptop, Điện thoại..." required />
+            <CFormInput
+              v-model="form.categoryName"
+              placeholder="VD: Laptop, Điện thoại..."
+              :invalid="v$.categoryName.$error"
+              required
+            />
+            <CFormFeedback invalid v-if="v$.categoryName.$error">
+              {{ v$.categoryName.$errors[0].$message }}
+            </CFormFeedback>
           </div>
           <div class="mb-3">
             <CFormLabel>Mô tả</CFormLabel>
-            <CFormTextarea v-model="form.description" rows="3" placeholder="Nhập mô tả chi tiết..."></CFormTextarea>
+            <CFormTextarea
+              v-model="form.description"
+              rows="3"
+              placeholder="Nhập mô tả chi tiết..."
+              :invalid="v$.description.$error"
+            ></CFormTextarea>
+            <CFormFeedback invalid v-if="v$.description.$error">
+              {{ v$.description.$errors[0].$message }}
+            </CFormFeedback>
           </div>
         </CForm>
       </CModalBody>
@@ -70,24 +86,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
+import { useVuelidate } from '@vuelidate/core'
+import { required, minLength, maxLength } from '@vuelidate/validators'
 
 // State quản lý dữ liệu
 const categories = ref([])
 const showModal = ref(false)
 const isEdit = ref(false)
+const toast = useToast()
 
 // Cổng của Service Danh mục
 const BASE_URL = 'http://localhost:8810'
 
-const form = ref({
+const form = reactive({
   id: null,
   categoryName: '',
-  description: '' // Backend Entity Category dùng 'description'
+  description: ''
 })
 
-// Lấy danh sách danh mục từ Java
+const rules = {
+  categoryName: {
+    required,
+    minLength: minLength(2),
+    maxLength: maxLength(100)
+  },
+  description: {
+    maxLength: maxLength(500)
+  }
+}
+
+const v$ = useVuelidate(rules, form)
+
+// Lấy danh sách danh mục từ backend
 const fetchCategories = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/admin/categories`)
@@ -97,13 +130,17 @@ const fetchCategories = async () => {
       categories.value = [] // Bỏ qua lỗi 404 khi DB trống
     } else {
       console.error('Lỗi khi tải danh mục:', error)
+      toast.error('Không thể tải danh sách danh mục')
     }
   }
 }
 
 // Hàm dọn dẹp form
 const resetForm = () => {
-  form.value = { id: null, categoryName: '', description: '' }
+  form.id = null
+  form.categoryName = ''
+  form.description = ''
+  v$.value.$reset()
 }
 
 const openAddModal = () => {
@@ -113,41 +150,45 @@ const openAddModal = () => {
 }
 
 const openEditModal = (category) => {
-  form.value = {
-    id: category.id,
-    categoryName: category.categoryName,
-    description: category.description
-  }
+  form.id = category.id
+  form.categoryName = category.categoryName
+  form.description = category.description
   isEdit.value = true
   showModal.value = true
 }
 
 // Gọi API Thêm hoặc Cập nhật
 const saveCategory = async () => {
-  // Bắt lỗi dữ liệu rỗng
-  if (!form.value.categoryName || form.value.categoryName.trim() === '') {
-    alert('Vui lòng nhập tên danh mục!')
+  const isValid = await v$.value.$validate()
+  if (!isValid) {
+    toast.error('Vui lòng kiểm tra lại thông tin nhập!')
     return
   }
 
   const payload = {
-    categoryName: form.value.categoryName.trim(),
-    description: form.value.description || ''
+    categoryName: form.categoryName.trim(),
+    description: form.description || ''
   }
 
   try {
     if (isEdit.value) {
-      await axios.put(`${BASE_URL}/admin/categories/${form.value.id}`, payload)
-      alert('Cập nhật danh mục thành công!')
+      await axios.put(`${BASE_URL}/admin/categories/${form.id}`, payload)
+      toast.success('Cập nhật danh mục thành công!')
     } else {
       await axios.post(`${BASE_URL}/admin/categories`, payload)
-      alert('Thêm mới danh mục thành công!')
+      toast.success('Thêm mới danh mục thành công!')
     }
     showModal.value = false
     fetchCategories() // Tải lại bảng
   } catch (error) {
     console.error('Lỗi khi lưu danh mục:', error)
-    alert('Có lỗi xảy ra! Hãy kiểm tra xem tên danh mục có bị TRÙNG không nhé.')
+    if (error.response?.status === 400) {
+      toast.error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!')
+    } else if (error.response?.status === 409) {
+      toast.error('Tên danh mục đã tồn tại!')
+    } else {
+      toast.error('Có lỗi xảy ra khi lưu danh mục!')
+    }
   }
 }
 

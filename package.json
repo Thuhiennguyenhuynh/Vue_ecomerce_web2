@@ -26,12 +26,15 @@
     "@coreui/vue": "^5.5.0",
     "@coreui/vue-chartjs": "^3.0.0",
     "@popperjs/core": "^2.11.8",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
     "axios": "^1.13.6",
     "chart.js": "^4.5.0",
     "pinia": "^3.0.3",
     "simplebar-vue": "^2.4.2",
     "vue": "^3.5.18",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",

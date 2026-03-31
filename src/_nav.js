@@ -33,6 +33,18 @@ export default [
   },
   {
     component: 'CNavItem',
+    name: 'Quản lý Người Dùng',
+    to: '/admin/users',
+    icon: 'cil-user', // Icon cho người dùng
+  },
+  {
+    component: 'CNavItem',
+    name: 'Quản lý Đơn Hàng',
+    to: '/admin/orders',
+    icon: 'cil-cart', // Icon cho đơn hàng
+  },
+  {
+    component: 'CNavItem',
     name: 'Typography',
     to: '/theme/typography',
     icon: 'cil-pencil',

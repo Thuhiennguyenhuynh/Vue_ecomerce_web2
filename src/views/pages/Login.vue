@@ -7,45 +7,53 @@
             <CCard class="p-4">
               <CCardBody>
                 <CForm @submit.prevent="handleLogin">
-                  <h1>Login</h1>
-                  <p class="text-body-secondary">Sign In to your account</p>
-                  
-                  <div v-if="errorMessage" class="alert alert-danger" role="alert">
-                    {{ errorMessage }}
-                  </div>
+                  <h1>Đăng Nhập Admin</h1>
+                  <p class="text-body-secondary">Đăng nhập vào hệ thống quản trị</p>
 
                   <CInputGroup class="mb-3">
                     <CInputGroupText>
                       <CIcon icon="cil-user" />
                     </CInputGroupText>
                     <CFormInput
-                      v-model="username"
-                      placeholder="Username"
-                      autocomplete="username"
+                      v-model="form.email"
+                      type="email"
+                      placeholder="Email"
+                      autocomplete="email"
+                      :invalid="v$.email.$error"
                       required
                     />
+                    <CFormFeedback invalid v-if="v$.email.$error">
+                      {{ v$.email.$errors[0].$message }}
+                    </CFormFeedback>
                   </CInputGroup>
+
                   <CInputGroup class="mb-4">
                     <CInputGroupText>
                       <CIcon icon="cil-lock-locked" />
                     </CInputGroupText>
                     <CFormInput
-                      v-model="password"
+                      v-model="form.password"
                       type="password"
-                      placeholder="Password"
+                      placeholder="Mật khẩu"
                       autocomplete="current-password"
+                      :invalid="v$.password.$error"
                       required
                     />
+                    <CFormFeedback invalid v-if="v$.password.$error">
+                      {{ v$.password.$errors[0].$message }}
+                    </CFormFeedback>
                   </CInputGroup>
+
                   <CRow>
                     <CCol :xs="6">
-                      <CButton color="primary" type="submit" class="px-4" :disabled="isLoading">
-                        {{ isLoading ? 'Đang xử lý...' : 'Login' }}
+                      <CButton color="primary" type="submit" class="px-4" :disabled="loading">
+                        <CSpinner v-if="loading" size="sm" />
+                        {{ loading ? 'Đang đăng nhập...' : 'Đăng Nhập' }}
                       </CButton>
                     </CCol>
                     <CCol :xs="6" class="text-right">
                       <CButton color="link" class="px-0">
-                        Forgot password?
+                        Quên mật khẩu?
                       </CButton>
                     </CCol>
                   </CRow>
@@ -55,14 +63,12 @@
             <CCard class="text-white bg-primary py-5" style="width: 44%">
               <CCardBody class="text-center">
                 <div>
-                  <h2>Sign up</h2>
+                  <h2>Đăng Ký</h2>
                   <p>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit,
-                    sed do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua.
+                    Tạo tài khoản admin mới để quản lý hệ thống.
                   </p>
                   <CButton color="light" variant="outline" class="mt-3" @click="router.push('/register')">
-                    Register Now!
+                    Đăng Ký Ngay!
                   </CButton>
                 </div>
               </CCardBody>
@@ -75,48 +81,52 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from 'vue-toastification'
+import { useVuelidate } from '@vuelidate/core'
+import { required, email, minLength } from '@vuelidate/validators'
 
-// Khai báo các state
-const username = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const isLoading = ref(false)
 const router = useRouter()
+const authStore = useAuthStore()
+const toast = useToast()
+
+const loading = ref(false)
+
+const form = reactive({
+  email: '',
+  password: ''
+})
+
+const rules = {
+  email: {
+    required,
+    email
+  },
+  password: {
+    required,
+    minLength: minLength(6)
+  }
+}
+
+const v$ = useVuelidate(rules, form)
 
 const handleLogin = async () => {
-  errorMessage.value = ''
-  isLoading.value = true
+  const isValid = await v$.value.$validate()
+  if (!isValid) return
 
-  try {
-    // Gọi API sang Backend. Lưu ý: Backend API bạn đang viết dùng @RequestParam,
-    // Nên chúng ta sẽ truyền data qua URL Params thay vì truyền dạng JSON body (đối số thứ 2 là null)
-    const response = await axios.post('http://localhost:8811/users/login', null, {
-      params: {
-        userName: username.value,
-        password: password.value
-      }
-    })
+  loading.value = true
 
-    if (response.status === 200) {
-      // Lưu thông tin user vào localStorage để các trang khác có thể dùng
-      localStorage.setItem('user', JSON.stringify(response.data))
-      
-      // Chuyển hướng về trang Dashboard
-      router.push('/dashboard') 
-    }
-  } catch (error) {
-    console.error('Lỗi khi đăng nhập:', error)
-    // Nếu API trả về mã lỗi 401 UNAUTHORIZED (Sai mật khẩu/user như bạn đã cấu hình bên Spring Boot)
-    if (error.response && error.response.status === 401) {
-      errorMessage.value = 'Sai tài khoản hoặc mật khẩu!'
-    } else {
-      errorMessage.value = 'Không thể kết nối đến server (Vui lòng kiểm tra lại Backend).'
-    }
-  } finally {
-    isLoading.value = false
+  const result = await authStore.login(form.email, form.password)
+
+  loading.value = false
+
+  if (result.success) {
+    toast.success('Đăng nhập thành công!')
+    router.push('/dashboard')
+  } else {
+    toast.error(result.message)
   }
 }
 </script>
