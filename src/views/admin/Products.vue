@@ -19,6 +19,8 @@
               <CTableHead color="light">
                 <CTableRow>
                   <CTableHeaderCell class="text-center">ID</CTableHeaderCell>
+                  <CTableHeaderCell class="text-center">Ảnh</CTableHeaderCell>
+                  <CTableHeaderCell>SKU</CTableHeaderCell>
                   <CTableHeaderCell>Tên Sản Phẩm</CTableHeaderCell>
                   <CTableHeaderCell class="text-end">Giá ($)</CTableHeaderCell>
                   <CTableHeaderCell>Danh Mục</CTableHeaderCell>
@@ -28,12 +30,21 @@
               </CTableHead>
               <CTableBody>
                 <CTableRow v-if="products.length === 0">
-                  <CTableDataCell colspan="6" class="text-center text-muted py-4">
+                  <CTableDataCell colspan="8" class="text-center text-muted py-4">
                     Chưa có sản phẩm nào. Hãy thêm sản phẩm mới.
                   </CTableDataCell>
                 </CTableRow>
                 <CTableRow v-for="product in products" :key="product.id">
                   <CTableDataCell class="text-center">{{ product.id }}</CTableDataCell>
+                  <CTableDataCell class="text-center">
+                    <img
+                      :src="product.mainImageUrl || 'https://via.placeholder.com/50'"
+                      alt="Product Image"
+                      class="img-thumbnail"
+                      style="width: 50px; height: 50px; object-fit: cover;"
+                    />
+                  </CTableDataCell>
+                  <CTableDataCell class="fw-semibold">{{ product.sku }}</CTableDataCell>
                   <CTableDataCell class="fw-semibold">{{ product.productName }}</CTableDataCell>
                   <CTableDataCell class="text-end text-success fw-bold">{{ product.price }}</CTableDataCell>
                   <CTableDataCell>
@@ -60,26 +71,38 @@
       </CCol>
     </CRow>
 
-    <CModal :visible="showModal" @close="showModal = false" backdrop="static">
+    <CModal :visible="showModal" @close="showModal = false" backdrop="static" size="lg">
       <CModalHeader>
         <CModalTitle>{{ isEdit ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới' }}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <CForm>
-          <div class="mb-3">
-            <CFormLabel>Tên Sản Phẩm <span class="text-danger">*</span></CFormLabel>
-            <CFormInput v-model="form.productName" placeholder="Nhập tên sản phẩm..." required />
-          </div>
           <div class="row">
             <div class="col-md-6 mb-3">
+              <CFormLabel>Tên Sản Phẩm <span class="text-danger">*</span></CFormLabel>
+              <CFormInput v-model="form.productName" placeholder="VD: Áo thun nam" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <CFormLabel>Đường dẫn Slug (Tự động) <span class="text-danger">*</span></CFormLabel>
+              <CFormInput v-model="form.slug" placeholder="VD: ao-thun-nam" required readonly style="background-color: #f8f9fa;" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <CFormLabel>Mã SKU (Tự động)</CFormLabel>
+              <CFormInput v-model="form.sku" placeholder="VD: PROD-12345" required readonly style="background-color: #f8f9fa;" />
+            </div>
+            <div class="col-md-4 mb-3">
               <CFormLabel>Giá ($) <span class="text-danger">*</span></CFormLabel>
               <CFormInput type="number" step="0.01" min="0" v-model.number="form.price" placeholder="99.99" required />
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
               <CFormLabel>Số Lượng <span class="text-danger">*</span></CFormLabel>
               <CFormInput type="number" min="0" v-model.number="form.availability" required />
             </div>
           </div>
+
           <div class="mb-3">
             <CFormLabel>Danh Mục <span class="text-danger">*</span></CFormLabel>
             <select class="form-select" v-model="form.categoryId" required>
@@ -89,6 +112,30 @@
               </option>
             </select>
           </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <CFormLabel>Ảnh Đại Diện (Upload)</CFormLabel>
+              <CFormInput type="file" accept="image/*" @change="handleMainImageUpload" />
+              <div v-if="form.mainImageUrl" class="mt-2">
+                <img :src="form.mainImageUrl" alt="Preview" style="height: 100px; border-radius: 8px; object-fit: cover;" />
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <CFormLabel>Ảnh Phụ (Upload nhiều ảnh)</CFormLabel>
+              <CFormInput type="file" accept="image/*" multiple @change="handleAdditionalImagesUpload" />
+              <div v-if="form.additionalImageUrls.length > 0" class="mt-2 d-flex flex-wrap gap-2">
+                <img
+                  v-for="(url, index) in form.additionalImageUrls"
+                  :key="index"
+                  :src="url"
+                  style="height: 60px; width: 60px; border-radius: 8px; object-fit: cover;"
+                />
+              </div>
+            </div>
+          </div>
+
           <div class="mb-3">
             <CFormLabel>Mô tả chi tiết</CFormLabel>
             <CFormTextarea v-model="form.discription" rows="3" placeholder="Mô tả sản phẩm..."></CFormTextarea>
@@ -97,8 +144,9 @@
       </CModalBody>
       <CModalFooter>
         <CButton color="secondary" variant="ghost" @click="showModal = false">Hủy</CButton>
-        <CButton color="primary" @click="saveProduct" :disabled="isSaving">
-          {{ isSaving ? 'Đang lưu...' : 'Lưu Sản Phẩm' }}
+        <CButton color="primary" @click="saveProduct" :disabled="isSaving || isUploading">
+          <CSpinner v-if="isUploading" size="sm" class="me-1" />
+          {{ isUploading ? 'Đang tải ảnh...' : (isSaving ? 'Đang lưu...' : 'Lưu Sản Phẩm') }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -106,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import axios from 'axios'
 
 // Gọi qua Cổng API Gateway 8900
@@ -119,16 +167,112 @@ const showModal = ref(false)
 const isEdit = ref(false)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const isUploading = ref(false) // Trạng thái khóa nút lưu khi đang upload ảnh
 
 const form = ref({
   id: null,
+  sku: '',
+  slug: '',
   productName: '',
   price: 0,
   categoryId: '',
   availability: 0,
+  mainImageUrl: '',
+  additionalImageUrls: [], // Mảng chứa URL ảnh phụ sau khi upload
   discription: ''
 })
 
+// === HÀM HỖ TRỢ: CHUYỂN TÊN THÀNH SLUG ===
+const generateSlug = (text) => {
+  if (!text) return '';
+  return text.toString().toLowerCase()
+    .replace(/á|à|ả|ạ|ã|ă|ắ|ằ|ẳ|ẵ|ặ|â|ấ|ầ|ẩ|ẫ|ậ/gi, 'a')
+    .replace(/é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ/gi, 'e')
+    .replace(/i|í|ì|ỉ|ĩ|ị/gi, 'i')
+    .replace(/ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ/gi, 'o')
+    .replace(/ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự/gi, 'u')
+    .replace(/ý|ỳ|ỷ|ỹ|ỵ/gi, 'y')
+    .replace(/đ/gi, 'd')
+    .replace(/\s+/g, '-') // Thay khoảng trắng bằng gạch ngang
+    .replace(/[^\w\-]+/g, '') // Xóa các ký tự đặc biệt
+    .replace(/\-\-+/g, '-') // Xóa nhiều gạch ngang liên tiếp
+    .replace(/^-+/, '') // Xóa gạch ngang ở đầu
+    .replace(/-+$/, ''); // Xóa gạch ngang ở cuối
+}
+
+// Theo dõi sự thay đổi của Tên sản phẩm để tự động tạo Slug
+watch(() => form.value.productName, (newName) => {
+  if (!isEdit.value) { // Chỉ tự động sinh slug khi thêm mới, sửa thì không tự đổi để tránh hỏng link cũ
+    form.value.slug = generateSlug(newName);
+  }
+})
+
+// === HÀM HỖ TRỢ: TỰ ĐỘNG TẠO SKU ===
+const generateSKU = () => {
+  const timestamp = Date.now().toString().slice(-6); // Lấy 6 số cuối của thời gian hiện tại
+  const randomStr = Math.random().toString(36).substring(2, 5).toUpperCase(); // 3 ký tự ngẫu nhiên
+  return `PROD-${timestamp}${randomStr}`;
+}
+
+// === CÁC HÀM XỬ LÝ UPLOAD ẢNH ===
+// Hàm giả lập việc gửi file lên Server và nhận về URL ảnh
+const uploadImageToServer = async (file) => {
+  /*
+   * ⚠️ LƯU Ý CHO BACKEND:
+   * Bạn cần tạo 1 API (ví dụ: POST /admin/upload) ở backend để nhận MultipartFile.
+   * Lưu file vào thư mục hoặc Cloudinary/S3, sau đó trả về 1 chuỗi URL của ảnh.
+   * Dưới đây là code gọi API thực tế nếu bạn đã làm API đó:
+   * * const formData = new FormData();
+   * formData.append('file', file);
+   * const response = await axios.post('http://localhost:8900/catalog/admin/upload', formData, {
+   * headers: { 'Content-Type': 'multipart/form-data' }
+   * });
+   * return response.data.imageUrl; // URL ảnh do BE trả về
+   */
+
+  // Tạm thời giả lập bằng việc tạo 1 URL local tạm thời từ file ở Frontend (để bạn xem trước giao diện)
+  // KHI NÀO CÓ API BE THÌ XÓA DÒNG NÀY VÀ MỞ COMMENT Ở TRÊN
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(URL.createObjectURL(file));
+    }, 500); // Giả vờ mất 0.5s để upload
+  });
+}
+
+const handleMainImageUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  isUploading.value = true;
+  try {
+    const uploadedUrl = await uploadImageToServer(file);
+    form.value.mainImageUrl = uploadedUrl;
+  } catch (error) {
+    alert("Lỗi upload ảnh đại diện!");
+  } finally {
+    isUploading.value = false;
+  }
+}
+
+const handleAdditionalImagesUpload = async (event) => {
+  const files = Array.from(event.target.files);
+  if (files.length === 0) return;
+
+  isUploading.value = true;
+  try {
+    // Upload nhiều file cùng lúc
+    const uploadPromises = files.map(file => uploadImageToServer(file));
+    const uploadedUrls = await Promise.all(uploadPromises);
+
+    // Nối thêm vào mảng ảnh phụ hiện có
+    form.value.additionalImageUrls = [...form.value.additionalImageUrls, ...uploadedUrls];
+  } catch (error) {
+    alert("Lỗi upload ảnh phụ!");
+  } finally {
+    isUploading.value = false;
+  }
+}
+
+// === API CALLS ===
 const fetchProducts = async () => {
   isLoading.value = true
   try {
@@ -138,14 +282,7 @@ const fetchProducts = async () => {
     if (error.response?.status === 404) {
       products.value = []
     } else {
-      console.error('Lỗi khi tải sản phẩm:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        request: error.request,
-        message: error.message,
-        config: error.config,
-      })
+      console.error('Lỗi khi tải sản phẩm:', error)
     }
   } finally {
     isLoading.value = false
@@ -157,23 +294,23 @@ const fetchCategories = async () => {
     const response = await axios.get(CATEGORY_API_URL)
     categories.value = response.data
   } catch (error) {
-    if (error.response?.status === 404) {
-      categories.value = []
-    } else {
-      console.error('Lỗi khi tải danh mục sản phẩm:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        request: error.request,
-        message: error.message,
-        config: error.config,
-      })
-    }
+    console.error('Lỗi khi tải danh mục:', error)
   }
 }
 
 const resetForm = () => {
-  form.value = { id: null, productName: '', price: 0, categoryId: '', availability: 0, discription: '' }
+  form.value = {
+    id: null,
+    sku: generateSKU(), // Gán SKU tự động ngay khi reset form
+    slug: '',
+    productName: '',
+    price: 0,
+    categoryId: '',
+    availability: 0,
+    mainImageUrl: '',
+    additionalImageUrls: [],
+    discription: ''
+  }
 }
 
 const openAddModal = () => {
@@ -185,10 +322,14 @@ const openAddModal = () => {
 const openEditModal = (product) => {
   form.value = {
     id: product.id,
+    sku: product.sku || generateSKU(), // Nếu chưa có thì sinh mới
+    slug: product.slug || '',
     productName: product.productName,
     price: product.price,
     categoryId: product.category?.id || '',
     availability: product.availability,
+    mainImageUrl: product.mainImageUrl || '',
+    additionalImageUrls: product.images ? product.images.map(img => img.imageUrl) : [],
     discription: product.discription
   }
   isEdit.value = true
@@ -196,18 +337,26 @@ const openEditModal = (product) => {
 }
 
 const saveProduct = async () => {
-  if (!form.value.productName || !form.value.categoryId) {
-    alert('Vui lòng nhập tên sản phẩm và chọn danh mục!')
+  if (!form.value.sku || !form.value.slug || !form.value.productName || !form.value.categoryId) {
+    alert('Vui lòng nhập đầy đủ thông tin bắt buộc!')
     return
   }
 
   isSaving.value = true
+
+  // Chuyển mảng URL thành mảng Object ProductImage để gửi xuống BE
+  const formattedImages = form.value.additionalImageUrls.map(url => ({ imageUrl: url }))
+
   const payload = {
+    sku: form.value.sku,
+    slug: form.value.slug,
     productName: form.value.productName,
     price: form.value.price,
     discription: form.value.discription,
     availability: form.value.availability,
-    category: { id: form.value.categoryId }
+    mainImageUrl: form.value.mainImageUrl,
+    category: { id: form.value.categoryId },
+    images: formattedImages
   }
 
   try {
@@ -219,35 +368,20 @@ const saveProduct = async () => {
     showModal.value = false
     fetchProducts()
   } catch (error) {
-    console.error('Lỗi khi lưu sản phẩm:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      request: error.request,
-      message: error.message,
-      config: error.config,
-    })
-    alert('Lưu thất bại! Vui lòng kiểm tra lại kết nối hoặc kiểm tra chi tiết lỗi console.')
+    console.error('Lỗi khi lưu:', error)
+    alert('Lưu thất bại! Hãy kiểm tra mã SKU/Slug xem có bị trùng hay không.')
   } finally {
     isSaving.value = false
   }
 }
 
 const deleteProduct = async (id) => {
-  if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này không? Dữ liệu không thể khôi phục.')) {
+  if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
     try {
       await axios.delete(`${API_URL}/${id}`)
       fetchProducts()
     } catch (error) {
-      console.error('Lỗi khi xóa:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        request: error.request,
-        message: error.message,
-        config: error.config,
-      })
-      alert('Lỗi: Không thể xóa sản phẩm này. Kiểm tra console để biết chi tiết.')
+      console.error('Lỗi khi xóa:', error)
     }
   }
 }
