@@ -133,7 +133,19 @@ const handleLogin = async () => {
     }
 
   } catch (error) {
-    console.error('LỖI ĐĂNG NHẬP CHI TIẾT:', error)
+    if (error.response) {
+      console.error('LỖI ĐĂNG NHẬP CHI TIẾT:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers,
+        config: error.config,
+      })
+    } else if (error.request) {
+      console.error('LỖI ĐĂNG NHẬP KHÔNG NHẬN ĐƯỢC RESPONSE:', error.request)
+    } else {
+      console.error('LỖI ĐĂNG NHẬP:', error.message)
+    }
+
     errorMessage.value = 'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.'
     toast.error('Đăng nhập thất bại!')
   } finally {

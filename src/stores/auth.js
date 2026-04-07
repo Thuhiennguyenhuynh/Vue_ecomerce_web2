@@ -33,7 +33,17 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: true }
     } catch (error) {
-      console.error("Login Error:", error);
+      if (error.response) {
+        console.error('Login Error 500 details:', {
+          status: error.response.status,
+          headers: error.response.headers,
+          data: error.response.data,
+          config: error.config,
+        })
+      } else {
+        console.error('Login Error:', error)
+      }
+
       let errorMsg = 'Đăng nhập thất bại';
 
       if (error.response && error.response.status === 401) {
@@ -41,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
       } else if (error.response && error.response.status === 404) {
         errorMsg = 'Không tìm thấy API (Sai URL đường dẫn).';
       } else if (error.response && error.response.status === 500) {
-        errorMsg = 'Lỗi server nội bộ.';
+        errorMsg = 'Lỗi server nội bộ. Kiểm tra console để xem chi tiết.';
       }
 
       return {

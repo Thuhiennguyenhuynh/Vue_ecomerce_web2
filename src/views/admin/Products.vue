@@ -138,7 +138,14 @@ const fetchProducts = async () => {
     if (error.response?.status === 404) {
       products.value = []
     } else {
-      console.error('Lỗi khi tải sản phẩm:', error)
+      console.error('Lỗi khi tải sản phẩm:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      })
     }
   } finally {
     isLoading.value = false
@@ -150,7 +157,18 @@ const fetchCategories = async () => {
     const response = await axios.get(CATEGORY_API_URL)
     categories.value = response.data
   } catch (error) {
-    if (error.response?.status === 404) categories.value = []
+    if (error.response?.status === 404) {
+      categories.value = []
+    } else {
+      console.error('Lỗi khi tải danh mục sản phẩm:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      })
+    }
   }
 }
 
@@ -201,8 +219,15 @@ const saveProduct = async () => {
     showModal.value = false
     fetchProducts()
   } catch (error) {
-    console.error('Lỗi khi lưu sản phẩm:', error)
-    alert('Lưu thất bại! Vui lòng kiểm tra lại kết nối.')
+    console.error('Lỗi khi lưu sản phẩm:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      request: error.request,
+      message: error.message,
+      config: error.config,
+    })
+    alert('Lưu thất bại! Vui lòng kiểm tra lại kết nối hoặc kiểm tra chi tiết lỗi console.')
   } finally {
     isSaving.value = false
   }
@@ -214,8 +239,15 @@ const deleteProduct = async (id) => {
       await axios.delete(`${API_URL}/${id}`)
       fetchProducts()
     } catch (error) {
-      console.error('Lỗi khi xóa:', error)
-      alert('Lỗi: Không thể xóa sản phẩm này.')
+      console.error('Lỗi khi xóa:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      })
+      alert('Lỗi: Không thể xóa sản phẩm này. Kiểm tra console để biết chi tiết.')
     }
   }
 }

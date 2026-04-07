@@ -80,7 +80,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 // Cổng API Gateway 8900
-const API_URL = 'http://localhost:8900/api/catalog/admin/categories'
+const API_URL = 'http://localhost:8900/catalog/admin/categories'
 
 const categories = ref([])
 const showModal = ref(false)
@@ -103,7 +103,14 @@ const fetchCategories = async () => {
     if (error.response?.status === 404) {
       categories.value = []
     } else {
-      console.error('Lỗi khi tải danh mục:', error)
+      console.error('Lỗi khi tải danh mục:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      })
     }
   } finally {
     isLoading.value = false
@@ -151,8 +158,15 @@ const saveCategory = async () => {
     showModal.value = false
     fetchCategories()
   } catch (error) {
-    console.error('Lỗi khi lưu danh mục:', error)
-    alert('Lưu thất bại! Tên danh mục có thể bị trùng lặp.')
+    console.error('Lỗi khi lưu danh mục:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      request: error.request,
+      message: error.message,
+      config: error.config,
+    })
+    alert('Lưu thất bại! Tên danh mục có thể bị trùng lặp hoặc server đã trả lỗi 500.')
   } finally {
     isSaving.value = false
   }
@@ -164,8 +178,15 @@ const deleteCategory = async (id) => {
       await axios.delete(`${API_URL}/${id}`)
       fetchCategories()
     } catch (error) {
-      console.error('Lỗi khi xóa:', error)
-      alert('Không thể xóa! Danh mục này đang được gán cho một hoặc nhiều sản phẩm.')
+      console.error('Lỗi khi xóa:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      })
+      alert('Không thể xóa! Danh mục này có thể đang được gán cho sản phẩm hoặc server trả lỗi 500.')
     }
   }
 }
