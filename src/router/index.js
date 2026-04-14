@@ -11,6 +11,11 @@ const routes = [
     component: () => import('@/views/pages/Login.vue'),
   },
   {
+    path: '/admin/login', // Đây là login riêng cho Admin
+    name: 'AdminLogin',
+    component: () => import('@/views/pages/AdminLogin.vue'),
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/pages/Register.vue'),

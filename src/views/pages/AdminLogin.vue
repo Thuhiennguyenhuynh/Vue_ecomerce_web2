@@ -113,25 +113,28 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleLogin = async () => {
+cconst handleLogin = async () => {
   const isValid = await v$.value.$validate()
   if (!isValid) return
 
   loading.value = true
-  errorMessage.value = '' // Xóa lỗi cũ
+  errorMessage.value = ''
 
   try {
-    // Gọi authStore.login() để xử lý authentication
     const result = await authStore.login(form.email, form.password)
 
     if (result.success) {
-      toast.success('Đăng nhập thành công!')
-      router.push('/dashboard')
+      // KIỂM TRA ROLE ADMIN
+      if (authStore.user && authStore.user.role && authStore.user.role.roleName === 'ADMIN') {
+         toast.success('Đăng nhập Admin thành công!')
+         router.push('/dashboard')
+      } else {
+         authStore.logout() // Bắt user ra nếu không phải Admin
+         errorMessage.value = 'Bạn không có quyền truy cập trang quản trị!'
+      }
     } else {
       errorMessage.value = result.message
-      toast.error('Đăng nhập thất bại!')
     }
-
   } catch (error) {
     if (error.response) {
       console.error('LỖI ĐĂNG NHẬP CHI TIẾT:', {
