@@ -354,9 +354,26 @@ router.beforeEach((to, from, next) => {
     token: authStore.token
   })
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  // Nếu đã đăng nhập admin rồi, không cho phép truy cập lại trang /admin/login
+  if (to.path === '/admin/login' && authStore.isAuthenticated) {
+    console.log('Admin already logged in, redirecting to dashboard')
+    next('/dashboard')
+    return
+  }
+
+  // Chặn back khi ở trang login
+  if ((to.path === '/login' || to.path === '/admin/login') && !authStore.isAuthenticated) {
+    // Thay thế history entry để người dùng không thể back
+    window.history.replaceState(null, null, to.path)
+  }
+
+  // Nếu truy cập admin routes mà chưa đăng nhập, redirect đến /admin/login
+  if (to.path.includes('/admin/') && !to.path.includes('/admin/login') && !authStore.isAuthenticated) {
+    console.log('Redirecting to admin login - user not authenticated')
+    next('/admin/login')
+  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     console.log('Redirecting to login - user not authenticated')
-    next('/login')
+    next('/admin/login')
   } else {
     next()
   }

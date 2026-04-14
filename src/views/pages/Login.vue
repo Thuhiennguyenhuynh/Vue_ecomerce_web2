@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'vue-toastification'
@@ -112,6 +112,24 @@ const rules = {
 }
 
 const v$ = useVuelidate(rules, form)
+
+// Chặn back khi ở trang login
+onMounted(() => {
+  // Thêm entry vào history để chặn back
+  window.history.pushState(null, null, window.location.href)
+
+  const handlePopState = (e) => {
+    e.preventDefault()
+    window.history.pushState(null, null, window.location.href)
+  }
+
+  window.addEventListener('popstate', handlePopState)
+
+  // Cleanup khi component unmount
+  return () => {
+    window.removeEventListener('popstate', handlePopState)
+  }
+})
 
 const handleLogin = async () => {
   const isValid = await v$.value.$validate()
