@@ -1,22 +1,29 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import router from '@/router'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 const breadcrumbs = ref()
+const route = useRoute()
+const router = useRouter()
 
 const getBreadcrumbs = () => {
-  return router.currentRoute.value.matched.map((route) => {
+  return route.matched.map((r) => {
     return {
-      active: route.path === router.currentRoute.value.fullPath,
-      name: route.name,
-      path: `${router.options.history.base}${route.path}`,
+      active: r.path === route.fullPath,
+      name: r.name,
+      path: `${router.options?.history?.base || ''}${r.path}`,
     }
   })
 }
 
-router.afterEach(() => {
-  breadcrumbs.value = getBreadcrumbs()
-})
+// Thay vì dùng router.afterEach (dễ gây memory leak nếu component unmount),
+// chuẩn Vue 3 là dùng watch để theo dõi sự thay đổi của route
+watch(
+  () => route.path,
+  () => {
+    breadcrumbs.value = getBreadcrumbs()
+  }
+)
 
 onMounted(() => {
   breadcrumbs.value = getBreadcrumbs()
@@ -27,7 +34,7 @@ onMounted(() => {
   <CBreadcrumb class="my-0">
     <CBreadcrumbItem
       v-for="item in breadcrumbs"
-      :key="item"
+      :key="item.path"
       :href="item.active ? '' : item.path"
       :active="item.active"
     >

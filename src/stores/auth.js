@@ -3,9 +3,11 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
 
-  // Do backend chưa có JWT, chúng ta tạm dùng một biến đánh dấu auth
+// Lấy user từ localStorage ngay khi khởi tạo để tránh lỗi F5 mất dữ liệu
+  const user = ref(JSON.parse(localStorage.getItem('user')) || null)
+  // Thêm biến kiểm tra Admin
+  const isAdmin = computed(() => user.value && user.value.role && user.value.role.roleName === 'ADMIN')
   const token = ref(localStorage.getItem('token') || null)
   const isAuthenticated = computed(() => !!token.value)
 
@@ -90,6 +92,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     isAuthenticated,
+    isAdmin,
     login,
     logout,
     checkAuth,

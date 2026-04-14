@@ -33,6 +33,7 @@ const routes = [
           import(
             /* webpackChunkName: "dashboard" */ '@/views/dashboard/Dashboard.vue'
           ),
+        meta: { requiresAuth: true }
       },
       {
         path: 'admin/products',
@@ -343,40 +344,61 @@ const router = createRouter({
   },
 })
 
+// ... (Phần khai báo routes ở trên giữ nguyên) ...
+
 // Route guard for authentication
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
+  // Phục hồi auth state từ localStorage nếu cần
+  if (!authStore.user && localStorage.getItem('user')) {
+    authStore.checkAuth()
+  }
+
+  const isAuthenticated = authStore.isAuthenticated
+  const isAdmin = authStore.isAdmin
+
   console.log('Router guard check:', {
     to: to.path,
     requiresAuth: to.meta.requiresAuth,
-    isAuthenticated: authStore.isAuthenticated,
-    token: authStore.token
+    isAuthenticated,
+    isAdmin
   })
 
-  // Nếu đã đăng nhập admin rồi, không cho phép truy cập lại trang /admin/login
-  if (to.path === '/admin/login' && authStore.isAuthenticated) {
-    console.log('Admin already logged in, redirecting to dashboard')
-    next('/dashboard')
-    return
-  }
-
-  // Chặn back khi ở trang login
-  if ((to.path === '/login' || to.path === '/admin/login') && !authStore.isAuthenticated) {
-    // Thay thế history entry để người dùng không thể back
+  // 1. Chặn back khi ở trang login
+  if ((to.path === '/login' || to.path === '/admin/login') && !isAuthenticated) {
     window.history.replaceState(null, null, to.path)
   }
 
-  // Nếu truy cập admin routes mà chưa đăng nhập, redirect đến /admin/login
-  if (to.path.includes('/admin/') && !to.path.includes('/admin/login') && !authStore.isAuthenticated) {
-    console.log('Redirecting to admin login - user not authenticated')
-    next('/admin/login')
-  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    console.log('Redirecting to login - user not authenticated')
-    next('/admin/login')
-  } else {
-    next()
+  // 2. Đã đăng nhập với tư cách Admin -> Không cho vào lại trang Login
+  if (to.path === '/admin/login' && isAuthenticated && isAdmin) {
+    console.log('Admin already logged in, redirecting to dashboard')
+    return next('/dashboard')
   }
+
+  // Xác định xem user có đang cố gắng vào trang Admin hay không
+  // Bất kỳ trang nào có /admin/ (ngoại trừ login) hoặc các trang yêu cầu Auth như Dashboard
+  const isProtectedAdminRoute = (to.path.includes('/admin/') && to.path !== '/admin/login')
+                                || to.meta.requiresAuth
+                                || to.path === '/dashboard' // Thêm check cứng cho dashboard nếu bạn chưa set meta
+
+  // 3. Nếu cố tình vào trang Admin/Dashboard mà không đủ điều kiện
+  if (isProtectedAdminRoute) {
+    if (!isAuthenticated) {
+      console.log('Chưa đăng nhập, chuyển hướng về Admin Login')
+      return next('/admin/login')
+    }
+
+    if (!isAdmin) {
+      console.log('Đã đăng nhập nhưng KHÔNG PHẢI ADMIN, ép văng ra ngoài')
+      alert('Bạn không có quyền truy cập trang quản trị viên!')
+      authStore.logout() // Xoá luôn phiên đăng nhập của User thường đang cố xâm nhập
+      return next('/admin/login')
+    }
+  }
+
+  // Nếu qua hết các bài test trên, cho phép truy cập
+  next()
 })
 
 export default router
