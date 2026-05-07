@@ -90,6 +90,18 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
+        path: 'admin/posts',
+        name: 'AdminPosts',
+        component: () => import('@/views/admin/Posts.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'admin/banners',
+        name: 'AdminBanners',
+        component: () => import('@/views/admin/Banners.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
         path: '/theme',
         name: 'Theme',
         redirect: '/theme/typography',

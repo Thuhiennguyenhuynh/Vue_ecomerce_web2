@@ -45,6 +45,18 @@ export default [
   },
   {
     component: 'CNavItem',
+    name: 'Quản lý Bài Viết',
+    to: '/admin/posts',
+    icon: 'cil-newspaper', // Icon cho bài viết
+  },
+  {
+    component: 'CNavItem',
+    name: 'Quản lý Banner',
+    to: '/admin/banners',
+    icon: 'cil-image', // Icon cho banner
+  },
+  {
+    component: 'CNavItem',
     name: 'Typography',
     to: '/theme/typography',
     icon: 'cil-pencil',
