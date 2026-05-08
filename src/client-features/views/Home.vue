@@ -22,6 +22,7 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div v-for="product in products" :key="product.id" class="bg-gray-50 p-4 rounded-lg border border-gray-100 hover:border-indigo-300 transition-colors group">
           <div class="h-48 bg-gray-200 rounded-md mb-4 overflow-hidden">
+            <!-- Image placeholder -->
             <div class="w-full h-full flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform">
               No Image
             </div>
@@ -40,7 +41,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import api from '../client-features/services/api'
+import api from '../services/api'
 
 const articles = ref([])
 const products = ref([])

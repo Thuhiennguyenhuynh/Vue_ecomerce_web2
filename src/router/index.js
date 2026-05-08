@@ -8,7 +8,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/pages/Login.vue'),
+    component: () => import('@/client-features/views/Home.vue'),
   },
   {
     path: '/admin/login', // Đây là login riêng cho Admin
@@ -23,32 +23,32 @@ const routes = [
   {
     path: '/',
     name: 'ClientHome',
-    component: () => import('@/views/client/HomeView.vue'),
+    component: () => import('@/client-features/views/Home.vue'),
   },
   {
     path: '/menu',
     name: 'Shop',
-    component: () => import('@/views/client/ShopView.vue'),
+    component: () => import('@/client-features/views/Products.vue'), // Renamed from ShopView.vue
   },
   {
     path: '/cart',
     name: 'Cart',
-    component: () => import('@/views/client/CheckoutFlow.vue'),
+    component: () => import('@/client-features/views/Cart.vue'),
   },
   {
     path: '/checkout',
     name: 'Checkout',
-    component: () => import('@/views/client/CheckoutFlow.vue'),
+    component: () => import('@/client-features/views/CheckoutFlow.vue'),
   },
   {
     path: '/client-login',
     name: 'ClientLogin',
-    component: () => import('@/views/client/ClientFeatures.vue'),
+    component: () => import('@/client-features/views/ClientFeatures.vue'),
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('@/views/client/ProfileView.vue'),
+    component: () => import('@/client-features/views/Profile.vue'),
   },
   {
     path: '/',
@@ -74,7 +74,7 @@ const routes = [
       {
         path:'admin/categories',
         name:'AdminCategories',
-        component: () => import('@/views/admin/Categories.vue'),
+        component: () => import('@/client-features/views/ClientFeatures.vue'),
         meta: { requiresAuth: true }
       },
       {
@@ -174,12 +174,12 @@ const routes = [
           {
             path: '/base/popovers',
             name: 'Popovers',
-            component: () => import('@/views/base/Popovers.vue'),
+            component: () => import('@/client-features/views/Products.vue'), // Renamed from ShopView.vue
           },
           {
             path: '/base/progress',
             name: 'Progress',
-            component: () => import('@/views/base/Progress.vue'),
+            component: () => import('@/client-features/views/Profile.vue'),
           },
           {
             path: '/base/spinners',
@@ -199,7 +199,7 @@ const routes = [
           {
             path: '/base/tooltips',
             name: 'Tooltips',
-            component: () => import('@/views/base/Tooltips.vue'),
+            component: () => import('@/client-features/views/Home.vue'),
           },
         ],
       },
@@ -253,7 +253,7 @@ const routes = [
           {
             path: '/forms/checks-radios',
             name: 'Checks & Radios',
-            component: () => import('@/views/forms/ChecksRadios.vue'),
+            component: () => import('@/client-features/views/Cart.vue'),
           },
           {
             path: '/forms/range',
