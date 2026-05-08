@@ -23,12 +23,8 @@ export default defineConfig(() => {
           replacement: '$1',
         },
         {
-          find: '@/',
-          replacement: `${path.resolve(__dirname, 'src')}/`,
-        },
-        {
           find: '@',
-          replacement: path.resolve(__dirname, '/src'),
+          replacement: path.resolve(__dirname, 'src'), // Đã sửa: bỏ '/' dư thừa và bỏ regex '@/'.
         },
       ],
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue', '.scss'],

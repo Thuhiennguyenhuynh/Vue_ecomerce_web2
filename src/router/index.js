@@ -1,7 +1,7 @@
 import { h, resolveComponent } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
-import DefaultLayout from '@/layouts/DefaultLayout'
+import DefaultLayout from '@/layouts/DefaultLayout.vue' // Đã sửa thêm đuôi .vue
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
@@ -40,11 +40,11 @@ const routes = [
     name: 'Checkout',
     component: () => import('@/client-features/views/CheckoutFlow.vue'),
   },
-  {
-    path: '/client-login',
-    name: 'ClientLogin',
-    component: () => import('@/client-features/views/ClientFeatures.vue'),
-  },
+  // {
+  //   path: '/client-login',
+  //   name: 'ClientLogin',
+  //   component: () => import('@/client-features/views/ClientFeatures.vue'),
+  // },
   {
     path: '/profile',
     name: 'Profile',
@@ -74,7 +74,7 @@ const routes = [
       {
         path:'admin/categories',
         name:'AdminCategories',
-        component: () => import('@/client-features/views/ClientFeatures.vue'),
+         component: () => import('@/views/admin/Categories.vue'),
         meta: { requiresAuth: true }
       },
       {
@@ -366,14 +366,14 @@ const routes = [
       {
         path: '404',
         name: 'Page404',
-        component: () => import('@/views/pages/Page404'),
+        component: () => import('@/views/pages/Page404.vue'), // Đã sửa thêm đuôi .vue
       },
       {
         path: '500',
         name: 'Page500',
-        component: () => import('@/views/pages/Page500'),
+        component: () => import('@/views/pages/Page500.vue'), // Đã sửa thêm đuôi .vue
       },
-       ],
+    ],
   },
 ]
 
@@ -385,8 +385,6 @@ const router = createRouter({
     return { top: 0 }
   },
 })
-
-// ... (Phần khai báo routes ở trên giữ nguyên) ...
 
 // Route guard for authentication
 router.beforeEach((to, from, next) => {

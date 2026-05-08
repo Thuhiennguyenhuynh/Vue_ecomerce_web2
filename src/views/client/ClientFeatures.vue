@@ -46,4 +46,5 @@ const askAI = async () => {
   const res = await axios.post('http://localhost:8900/api/ai', { query: query.value });
   response.value = res.data.answer;
 };
+
 </script>
